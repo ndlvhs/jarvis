@@ -1,19 +1,24 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
 import openai
 import os
-from fastapi import FastAPI
 
-# Загрузка переменных окружения
+# Загружаем ключ API OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
+# Определяем модель для запроса
+class MessageRequest(BaseModel):
+    text: str
+
 @app.post("/process_message")
-async def process_message(text: str):
+async def process_message(request: MessageRequest):
     try:
         # Отправляем запрос в OpenAI API
         response = openai.Completion.create(
             model="gpt-4",  # Модель GPT-4 или другая, если нужно
-            prompt=text,
+            prompt=request.text,
             max_tokens=150,
             temperature=0.7
         )
