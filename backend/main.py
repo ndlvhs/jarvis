@@ -1,33 +1,28 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import openai
-import os
-
-# Загружаем ключ API OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from openai_api import ask_gpt  # импортируем функцию, обращающуюся к OpenAI
+import logging
 
 app = FastAPI()
 
-# Определяем модель для запроса
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+
+# Модель запроса
 class MessageRequest(BaseModel):
     text: str
+    now: str  # формат: '2025-04-29 10:23'
 
 @app.post("/process_message")
 async def process_message(request: MessageRequest):
-    try:
-        # Отправляем запрос в OpenAI API
-        response = openai.Completion.create(
-            model="gpt-4",  # Модель GPT-4 или другая, если нужно
-            prompt=request.text,
-            max_tokens=150,
-            temperature=0.7
-        )
-        # Возвращаем ответ от OpenAI
-        return {"response": response.choices[0].text.strip()}
-    except Exception as e:
-        return {"error": f"Ошибка при запросе к OpenAI: {str(e)}"}
+    prompt = f"Сейчас {request.now}. Пользователь написал: \"{request.text}\". Выдели из этого дату, время и задачу. Ответ верни в JSON-формате с полями date, time и task. Если не получилось — напиши 'null'."
 
-# Запуск приложения
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    logging.info(f"Prompt sent to GPT: {prompt}")
+
+    try:
+        gpt_response = ask_gpt(prompt)
+        logging.info(f"GPT response: {gpt_response}")
+        return {"response": gpt_response}
+    except Exception as e:
+        logging.error(f"OpenAI error: {e}")
+        return {"error": f"Ошибка при обращении к OpenAI: {str(e)}"}
