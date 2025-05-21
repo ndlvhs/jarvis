@@ -1,18 +1,27 @@
 import os
 import openai
 
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def ask_gpt(prompt: str) -> str:
+def ask_gpt(text: str, now: str) -> str:
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # или "gpt-4" если используешь его
+        prompt = (
+            f"Сегодня: {now}\n"
+            f"Пользователь написал: '{text}'\n"
+            "Извлеки из этого задачи в формате JSON:\n"
+            "{ \"date\": \"YYYY-MM-DD\", \"time\": \"HH:MM\", \"task\": \"...\" }"
+        )
+
+        response = openai.chat.completions.create(
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "Ты ассистент, помогающий выделять дату, время и задачу. Отвечай строго в JSON с полями: date, time, task. Если не понял — верни null."},
+                {"role": "system", "content": "Ты помощник по планированию задач. Всегда возвращай JSON с датой, временем и задачей."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3
+            temperature=0.2
         )
-        return response.choices[0].message.content.strip()
+
+        return response.choices[0].message.content
+
     except Exception as e:
-        return f"Ошибка при запросе к OpenAI: {str(e)}"
+        return f"Ошибка при запросе к OpenAI: {e}"
