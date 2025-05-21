@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 openai
-pydantic
+python-dotenv
+requests
+aiogram==2.25.2
