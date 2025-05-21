@@ -1,33 +1,39 @@
-import requests
 import os
-from aiogram import Bot, Dispatcher, types, executor
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
+import requests
+from datetime import datetime
+from dotenv import load_dotenv
 
-# Устанавливаем API ключ для Telegram
+load_dotenv()
+
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+API_URL = os.getenv("BACKEND_API_URL")  # например: https://jarvis-production-aa5d.up.railway.app/process_message
+
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher(bot)
 
-# URL API на Railway
-API_URL = "https://your-railway-app-url/process_message"
-
-@dp.message_handler(commands=['start'])
-async def start_command(message: types.Message):
-    await message.answer("Привет! Я помогу тебе добавить задачу в календарь. Просто напиши её в свободной форме!")
-
 @dp.message_handler()
-async def echo_message(message: types.Message):
+async def handle_message(message: types.Message):
     user_text = message.text
-    print(f"Received message: {user_text}")
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # Отправляем запрос на новый backend
-    response = requests.post(API_URL, json={"text": user_text})
-    result = response.json()
+    payload = {
+        "text": user_text,
+        "now": now_str
+    }
 
-    # Отправляем ответ обратно в Telegram
-    if "response" in result:
-        await message.answer(f"Ответ от OpenAI: {result['response']}")
-    else:
-        await message.answer("Ошибка при обработке запроса.")
+    try:
+        response = requests.post(API_URL, json=payload)
+        data = response.json()
+
+        # если вернулся json с ключами date/time/task — всё ок
+        if "response" in data and "date" in data["response"]:
+            await message.reply(f"🗓 Задача:\n{data['response']}")
+        else:
+            await message.reply("❌ Не смог распознать дату и время. Попробуй уточнить.")
+    except Exception as e:
+        await message.reply(f"❌ Ошибка: {e}")
 
 if __name__ == "__main__":
     from aiogram import executor
