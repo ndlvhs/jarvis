@@ -1,17 +1,16 @@
+# backend/main.py
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from backend.openai_api import ask_gpt
 from datetime import datetime
-from app.bot import start_bot  # путь зависит от структуры
+from app.bot import start_bot  # ✅ НЕ запускай executor напрямую!
 
 app = FastAPI()
 
-import asyncio
-
 @app.on_event("startup")
 async def on_startup():
-    print("✅ FastAPI startup: launching Telegram bot")
-    asyncio.create_task(start_bot())
+    await start_bot()  # ✅ теперь это безопасный async polling
 
 @app.post("/process_message")
 async def process_message(request: Request):
@@ -25,6 +24,5 @@ async def process_message(request: Request):
 
         result = ask_gpt(text, now)
         return JSONResponse(content={"response": result})
-
     except Exception as e:
         return JSONResponse(content={"error": f"Ошибка на сервере: {e}"}, status_code=500)

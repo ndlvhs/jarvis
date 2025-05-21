@@ -1,17 +1,24 @@
+# app/bot.py
+
 import os
 from aiogram import Bot, Dispatcher, types
-import logging
+from aiogram.types import Message
+from aiogram.dispatcher import FSMContext
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.utils import executor
+from dotenv import load_dotenv
 import requests
 from datetime import datetime
 import json
+
+load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 API_URL = os.getenv("BACKEND_API_URL")
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher(bot)
-logging.basicConfig(level=logging.INFO)
-
+dp.middleware.setup(LoggingMiddleware())
 
 @dp.message_handler()
 async def handle_message(message: types.Message):
@@ -41,9 +48,7 @@ async def handle_message(message: types.Message):
         await message.reply(f"⚠️ Ошибка: {e}")
 
 
+# 💡 Новый метод для асинхронного запуска
 async def start_bot():
-    from aiogram import executor
-    from aiogram.utils.executor import start_polling
-    print("🚀 Starting Telegram bot")
-    await dp.start_polling()
-    
+    from asyncio import create_task
+    create_task(dp.start_polling())
