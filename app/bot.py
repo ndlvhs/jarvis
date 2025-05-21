@@ -1,18 +1,17 @@
 import os
 from aiogram import Bot, Dispatcher, types
-from dotenv import load_dotenv
+import logging
 import requests
 from datetime import datetime
 import json
-import asyncio
-
-load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 API_URL = os.getenv("BACKEND_API_URL")
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
 dp = Dispatcher(bot)
+logging.basicConfig(level=logging.INFO)
+
 
 @dp.message_handler()
 async def handle_message(message: types.Message):
@@ -32,15 +31,7 @@ async def handle_message(message: types.Message):
 
         parsed = data.get("response")
         if isinstance(parsed, str):
-            try:
-                # Убираем обёртку ```json ... ``` если есть
-                parsed_cleaned = parsed.strip()
-                if parsed_cleaned.startswith("```json"):
-                    parsed_cleaned = parsed_cleaned.removeprefix("```json").removesuffix("```").strip()
-                parsed = json.loads(parsed_cleaned)
-            except Exception as e:
-                await message.reply(f"⚠️ Ошибка при парсинге ответа: {e}")
-                return
+            parsed = json.loads(parsed)
 
         if parsed.get("date") and parsed.get("time"):
             await message.reply(f"✅ Задача: {parsed['task']}\n📅 Когда: {parsed['date']} {parsed['time']}")
@@ -49,6 +40,10 @@ async def handle_message(message: types.Message):
     except Exception as e:
         await message.reply(f"⚠️ Ошибка: {e}")
 
-# 👇 Запускаем бота асинхронно, совместимо с FastAPI
+
 async def start_bot():
-    asyncio.create_task(dp.start_polling())
+    from aiogram import executor
+    from aiogram.utils.executor import start_polling
+    print("🚀 Starting Telegram bot")
+    await dp.start_polling()
+    

@@ -6,9 +6,12 @@ from app.bot import start_bot  # путь зависит от структуры
 
 app = FastAPI()
 
+import asyncio
+
 @app.on_event("startup")
 async def on_startup():
-    await start_bot()
+    print("✅ FastAPI startup: launching Telegram bot")
+    asyncio.create_task(start_bot())
 
 @app.post("/process_message")
 async def process_message(request: Request):
