@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from openai_api import ask_gpt  # импортируем функцию, обращающуюся к OpenAI
+from backend.openai_api import ask_gpt 
 import logging
 
 app = FastAPI()
