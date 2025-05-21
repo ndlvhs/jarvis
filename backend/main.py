@@ -1,7 +1,18 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from backend.openai_api import ask_gpt  # Убедись, что путь корректен
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "app"))
 
+from bot import start_bot
+
+# ниже в main.py
+import asyncio
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(start_bot())
 app = FastAPI()
 
 
